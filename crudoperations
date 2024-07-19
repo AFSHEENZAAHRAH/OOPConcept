@@ -1,0 +1,89 @@
+from sqlalchemy.orm import sessionmaker
+from constants import ConnectDatabase
+import json
+from models_class import User
+
+
+# Session = sessionmaker(bind=engine)
+# session = Session()
+
+FILE_LOCATION = r'C:\Users\afshe\OneDrive - Kumaraguru College of Technology\Desktop\OOPConcept\data.json'
+
+class CrudOperations(ConnectDatabase):
+
+    def __init__(self):
+        self._session = None
+        self._databse_url = None
+
+    @property
+    def session(self):
+        if self._session == None:
+            engine =  self.make_session
+            Session = sessionmaker(bind=engine)
+            self._session = Session()
+            return self._session
+        else:
+            return self._session
+
+    def add_users(self, user_id, user_firstname, user_lastname,user_gender,user_email,user_ip_address):
+        new_user= User(id =user_id, first_name=user_firstname, last_name=user_lastname,gender=user_gender,email=user_email,ip_address=user_ip_address)
+        self.session.add(new_user)
+        self.session.commit()
+        print("User added successfully!")
+        self.session.close()
+
+    def read_users(self):
+        users = self.session.query(User).all()
+        self.session.close()
+        return users
+
+    def update_user(self,id, first_name):
+        user = self.session.get(User, id)
+        if user:
+            user.first_name = first_name
+            self.session.commit()
+            print("User updated successfully")
+        else:
+            print("User not found")
+        self.session.close()
+
+    def delete_user(self,id):
+        new_user= self.session.query(User).filter_by(id=int(id)).first()
+        if new_user:
+            self.session.delete(new_user)
+            self.session.commit()
+            print("User deleted successfully!")
+        else:
+            print("User not found")
+        self.session.close()
+
+    
+    def read_file(self):
+        data = None
+        with open(FILE_LOCATION, 'r') as f:
+            data = json.load(f)
+        return data
+    
+    def process_file(self):
+        data=self.read_file()
+        print(data)
+        if data :
+            for dict in data :
+                self.add_users(user_id=dict['id'], user_firstname=dict['first_name'], user_lastname=dict['last_name'],user_gender=dict['gender'],user_email=dict['email'],user_ip_address=dict['ip_address'])
+
+if __name__ == "__main__":
+    crud_instance = CrudOperations()
+    # file_data = crud_instance.read_file()
+    # print(file_data)
+    #crud_instance.process_file()
+    crud_instance.update_user(id=1, first_name='jaya')
+    crud_instance.delete_user(id=2)
+    updated_user = crud_instance.session.query(User).filter_by(id=1).first()
+    get_data = crud_instance.read_users()
+    print(get_data)
+    print("updated user:")
+    print(updated_user.first_name)
+
+
+
+    
